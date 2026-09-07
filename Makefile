@@ -7,9 +7,10 @@ fmt:  ## Auto-format and auto-fix
 	uv run ruff format .
 	uv run ruff check --fix .
 
-lint:  ## Check formatting + lint rules (no changes)
+lint:  ## Check formatting + lint rules + import boundaries (no changes)
 	uv run ruff format --check .
 	uv run ruff check .
+	uv run lint-imports
 
 typecheck:  ## Static type checking
 	uv run mypy

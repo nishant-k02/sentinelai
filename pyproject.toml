@@ -35,6 +35,11 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/sentinelai"]
+[tool.hatch.build]
+# Editable installs = a plain .pth that appends src/ to sys.path.
+# Avoids hatchling's import-hook "finder" shim, which is fragile
+# (especially with a space in the project path).
+dev-mode-dirs = ["src"]
 
 # ----------------------------------------------------------------------
 # Ruff — formatter + linter (replaces black, isort, flake8, pyupgrade…)
@@ -89,3 +94,18 @@ markers = [
 [tool.coverage.run]
 source = ["src/sentinelai"]
 branch = true
+
+# ----------------------------------------------------------------------
+# import-linter — enforce architectural boundaries (run: uv run lint-imports)
+# ----------------------------------------------------------------------
+[tool.importlinter]
+root_package = "sentinelai"
+
+[[tool.importlinter.contracts]]
+name = "Layered: platform < modules < worker"
+type = "layers"
+layers = [
+    "sentinelai.worker",
+    "sentinelai.modules",
+    "sentinelai.platform",
+]
