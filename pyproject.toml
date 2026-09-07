@@ -1,0 +1,91 @@
+[project]
+name = "sentinelai"
+version = "0.0.0"
+description = "Intelligent incident detection, RCA, and automated remediation platform"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { file = "LICENSE" }
+
+# Runtime dependencies. Lower bounds only — uv.lock pins exact versions.
+# We add a dependency in the phase that first needs it, not before.
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "structlog>=24.4",
+]
+
+[dependency-groups]
+# Dev-only tools. `uv sync` installs this group by default.
+dev = [
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=6.0",
+    "httpx>=0.27",          # async test client for FastAPI
+    "import-linter>=2.1",   # enforces module boundaries (used from 0.3)
+    "pre-commit>=4.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sentinelai"]
+
+# ----------------------------------------------------------------------
+# Ruff — formatter + linter (replaces black, isort, flake8, pyupgrade…)
+# ----------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort (import ordering)
+    "UP",       # pyupgrade (modern syntax)
+    "B",        # flake8-bugbear (likely bugs)
+    "SIM",      # flake8-simplify
+    "C4",       # comprehensions
+    "RUF",      # ruff-specific
+]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]  # asserts are fine in tests
+
+# ----------------------------------------------------------------------
+# Mypy — static type checking, strict
+# ----------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.12"
+strict = true
+mypy_path = "src"
+files = ["src", "tests"]
+plugins = ["pydantic.mypy"]
+warn_unreachable = true
+warn_redundant_casts = true
+show_error_codes = true
+
+# ----------------------------------------------------------------------
+# Pytest
+# ----------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+addopts = "-ra --strict-markers --cov=sentinelai --cov-report=term-missing"
+markers = [
+    "unit: fast, no I/O, always run",
+    "integration: requires Postgres/Redis/Kafka containers",
+]
+
+[tool.coverage.run]
+source = ["src/sentinelai"]
+branch = true
