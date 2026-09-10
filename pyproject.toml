@@ -14,6 +14,7 @@ dependencies = [
     "pydantic>=2.9",
     "pydantic-settings>=2.6",
     "structlog>=24.4",
+    "prometheus-client>=0.21",
 ]
 
 [dependency-groups]
@@ -106,6 +107,7 @@ name = "Layered: platform < modules < worker"
 type = "layers"
 layers = [
     "sentinelai.worker",
+    "sentinelai.api",
     "sentinelai.modules",
     "sentinelai.platform",
 ]
