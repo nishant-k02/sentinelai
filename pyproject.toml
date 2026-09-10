@@ -103,7 +103,7 @@ branch = true
 root_package = "sentinelai"
 
 [[tool.importlinter.contracts]]
-name = "Layered: platform < modules < worker"
+name = "Layered: platform < modules < api/worker"
 type = "layers"
 layers = [
     "sentinelai.worker",
