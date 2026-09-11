@@ -9,29 +9,40 @@ from sentinelai.api.errors import register_exception_handlers
 from sentinelai.api.routes.health import router as health_router
 from sentinelai.api.routes.metrics import router as metrics_router
 from sentinelai.platform.config import Settings, get_settings
+from sentinelai.platform.db import create_db_engine
 from sentinelai.platform.logging import configure_logging, get_logger
+from sentinelai.platform.redis import create_redis
 
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Startup/shutdown hook. Phase 0.5 opens DB/Redis pools here and closes
-    them on shutdown."""
+    """Runs once around the server's life. Open pools here; close them on exit."""
     log = get_logger(__name__)
-    log.info("api_starting")
-    yield
-    log.info("api_stopping")
+    settings: Settings = app.state.settings
+
+    engine = create_db_engine(settings)
+    redis = create_redis(settings)
+    app.state.engine = engine
+    app.state.redis = redis
+    log.info("api_started")
+
+    try:
+        yield
+    finally:
+        await engine.dispose()
+        await redis.aclose()
+        log.info("api_stopped")
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
-    """Application factory. Production calls this once (see main.py); tests call
-    it per test for isolation."""
+    """Application factory. Prod calls it once; tests call it per test."""
     settings = settings or get_settings()
     configure_logging(settings)
 
     app = FastAPI(title="SentinelAI API", version="0.0.0", lifespan=_lifespan)
+    app.state.settings = settings
 
     register_exception_handlers(app)
     app.include_router(health_router)
     app.include_router(metrics_router)
-
     return app

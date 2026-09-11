@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     # JSON logs everywhere except local dev, where console output reads better.
     log_json: bool = True
 
+    database_url: str = "postgresql+asyncpg://sentinelai:sentinelai@localhost:5432/sentinelai"
+    redis_url: str = "redis://localhost:6379/0"
+
     @property
     def is_local(self) -> bool:
         return self.environment is Environment.LOCAL

@@ -1,0 +1,34 @@
+name: sentinelai
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sentinelai
+      POSTGRES_PASSWORD: sentinelai
+      POSTGRES_DB: sentinelai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinelai -d sentinelai"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+
+  redis:
+    image: redis:7-alpine
+    # --save "" --appendonly no  => pure in-memory, no disk persistence.
+    # Correct for a cache: never treat Redis as a source of truth.
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  postgres_data:
