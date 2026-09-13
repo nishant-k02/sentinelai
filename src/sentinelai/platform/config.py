@@ -37,6 +37,7 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://sentinelai:sentinelai@localhost:5432/sentinelai"
     redis_url: str = "redis://localhost:6379/0"
+    kafka_bootstrap_servers: str = "localhost:9092"
 
     @property
     def is_local(self) -> bool:

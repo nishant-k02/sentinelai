@@ -19,6 +19,7 @@ dependencies = [
     "asyncpg>=0.30",
     "alembic>=1.14",
     "redis>=5.2",
+    "aiokafka>=0.11",
 ]
 
 [dependency-groups]
@@ -83,6 +84,9 @@ plugins = ["pydantic.mypy"]
 warn_unreachable = true
 warn_redundant_casts = true
 show_error_codes = true
+[[tool.mypy.overrides]]
+module = ["aiokafka.*"]
+ignore_missing_imports = true
 
 # ----------------------------------------------------------------------
 # Pytest
