@@ -40,3 +40,6 @@ migrate:  ## Apply all pending migrations
 
 migration:  ## Autogenerate a migration:  make migration m="add users table"
 	uv run alembic revision --autogenerate -m "$(m)"
+
+worker:  ## Run the worker process (Ctrl+C for graceful shutdown)
+	uv run python -m sentinelai.worker
