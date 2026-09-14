@@ -1,4 +1,5 @@
-.PHONY: install fmt lint typecheck test test-integration test-all check up down logs migrate migration
+.PHONY: install fmt lint typecheck test test-integration test-all check up down logs migrate migration \
+	worker web-install web-dev web-lint web-typecheck web-test web-build gen-api-types
 
 install:  ## Sync dependencies into .venv
 	uv sync
@@ -24,7 +25,7 @@ test-integration:  ## Integration tests (run `make up` first)
 test-all:  ## Every test (needs infra up)
 	uv run pytest
 
-check: lint typecheck test  ## What runs on every change
+check: lint typecheck test web-lint web-typecheck web-test  ## What runs on every change
 
 up:  ## Start local infra and wait until healthy
 	docker compose -f infra/compose/docker-compose.yml up -d --wait
@@ -43,3 +44,24 @@ migration:  ## Autogenerate a migration:  make migration m="add users table"
 
 worker:  ## Run the worker process (Ctrl+C for graceful shutdown)
 	uv run python -m sentinelai.worker
+
+web-install:  ## Install frontend dependencies
+	cd web && pnpm install
+
+web-dev:  ## Run the frontend dev server
+	cd web && pnpm dev
+
+web-lint:  ## Format-check + lint the frontend
+	cd web && pnpm format:check && pnpm lint
+
+web-typecheck:  ## Type-check the frontend
+	cd web && pnpm typecheck
+
+web-test:  ## Run frontend tests
+	cd web && pnpm test
+
+web-build:  ## Production build of the frontend
+	cd web && pnpm build
+
+gen-api-types:  ## Regenerate web/src/lib/api-types.gen.ts (needs the API running)
+	cd web && pnpm gen:api-types
