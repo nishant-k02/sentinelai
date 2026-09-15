@@ -4,6 +4,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from sentinelai.api.errors import register_exception_handlers
 from sentinelai.api.routes.health import router as health_router
@@ -12,6 +13,7 @@ from sentinelai.platform.config import Settings, get_settings
 from sentinelai.platform.db import create_db_engine
 from sentinelai.platform.logging import configure_logging, get_logger
 from sentinelai.platform.redis import create_redis
+from sentinelai.platform.tracing import configure_tracing, instrument_redis, instrument_sqlalchemy
 
 
 @asynccontextmanager
@@ -22,6 +24,8 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     engine = create_db_engine(settings)
     redis = create_redis(settings)
+    instrument_sqlalchemy(engine)
+    instrument_redis()
     app.state.engine = engine
     app.state.redis = redis
     log.info("api_started")
@@ -38,6 +42,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     """Application factory. Prod calls it once; tests call it per test."""
     settings = settings or get_settings()
     configure_logging(settings)
+    configure_tracing(settings)
 
     app = FastAPI(title="SentinelAI API", version="0.0.0", lifespan=_lifespan)
     app.state.settings = settings
@@ -45,4 +50,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     register_exception_handlers(app)
     app.include_router(health_router)
     app.include_router(metrics_router)
+    FastAPIInstrumentor.instrument_app(app)
     return app

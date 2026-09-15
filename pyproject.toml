@@ -20,6 +20,11 @@ dependencies = [
     "alembic>=1.14",
     "redis>=5.2",
     "aiokafka>=0.11",
+    "opentelemetry-sdk>=1.29",
+    "opentelemetry-exporter-otlp-proto-http>=1.29",
+    "opentelemetry-instrumentation-fastapi>=0.50b0",
+    "opentelemetry-instrumentation-sqlalchemy>=0.50b0",
+    "opentelemetry-instrumentation-redis>=0.50b0",
 ]
 
 [dependency-groups]
@@ -85,7 +90,7 @@ warn_unreachable = true
 warn_redundant_casts = true
 show_error_codes = true
 [[tool.mypy.overrides]]
-module = ["aiokafka.*"]
+module = ["aiokafka.*", "opentelemetry.instrumentation.*"]
 ignore_missing_imports = true
 
 # ----------------------------------------------------------------------
