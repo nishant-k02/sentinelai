@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
+from opentelemetry import propagate
+from opentelemetry.context import Context
 
 from sentinelai.platform.config import Settings
 
@@ -32,3 +34,21 @@ def create_consumer(settings: Settings, *topics: str, group_id: str) -> AIOKafka
         auto_offset_reset="earliest",
         enable_auto_commit=False,
     )
+
+
+def inject_trace_headers() -> list[tuple[str, bytes]]:
+    """Serialize the currently active trace context into Kafka message
+    headers (W3C `traceparent`) so a consumer — on a different process,
+    possibly minutes later — can continue the same trace instead of starting
+    a disconnected one. This is the Kafka equivalent of the `traceparent`
+    HTTP header FastAPI's instrumentor reads automatically."""
+    carrier: dict[str, str] = {}
+    propagate.inject(carrier)
+    return [(k, v.encode()) for k, v in carrier.items()]
+
+
+def extract_trace_context(headers: list[tuple[str, bytes]] | None) -> Context:
+    """Rebuild a trace context from Kafka message headers, to continue the
+    producer's trace inside the consumer."""
+    carrier = {k: v.decode() for k, v in (headers or [])}
+    return propagate.extract(carrier)

@@ -4,8 +4,24 @@ import logging
 import sys
 
 import structlog
+from opentelemetry import trace as otel_trace
 
 from sentinelai.platform.config import Settings
+
+
+def _add_trace_context(
+    logger: structlog.types.WrappedLogger,
+    method_name: str,
+    event_dict: structlog.types.EventDict,
+) -> structlog.types.EventDict:
+    """Attach trace_id/span_id from whatever OTel span is active right now.
+    This is what makes 'find every log line for this one request' possible —
+    grep the trace_id from a Jaeger trace, or vice versa."""
+    span_ctx = otel_trace.get_current_span().get_span_context()
+    if span_ctx.is_valid:
+        event_dict["trace_id"] = format(span_ctx.trace_id, "032x")
+        event_dict["span_id"] = format(span_ctx.span_id, "016x")
+    return event_dict
 
 
 def configure_logging(settings: Settings) -> None:
@@ -20,6 +36,7 @@ def configure_logging(settings: Settings) -> None:
 
     shared_processors: list[structlog.types.Processor] = [
         structlog.contextvars.merge_contextvars,
+        _add_trace_context,
         structlog.processors.add_log_level,
         structlog.processors.TimeStamper(fmt="iso", utc=True),
         structlog.processors.StackInfoRenderer(),
