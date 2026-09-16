@@ -1,5 +1,7 @@
 # SentinelAI
 
+[![CI](https://github.com/nishant-k02/sentinelai/actions/workflows/ci.yml/badge.svg)](https://github.com/nishant-k02/sentinelai/actions/workflows/ci.yml)
+
 Intelligent incident detection, root-cause analysis, and automated remediation for distributed systems.
 
 SentinelAI watches a fleet of services, detects anomalies before humans notice, opens a structured
