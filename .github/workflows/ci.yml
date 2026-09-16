@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "chore/**", "feature/**", "fix/**"]
+  pull_request:
+    branches: [main]
+
+# A new push to the same branch cancels whatever CI run is already in
+# flight for it — no point finishing a check on a commit you've superseded.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python — lint, types, unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync
+      - run: make lint
+      - run: make typecheck
+      - run: make test
+
+  python-integration:
+    name: Python — integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync
+      - name: Start infra (same Compose file as local dev)
+        run: docker compose -f infra/compose/docker-compose.yml up -d --wait
+      - run: uv run alembic upgrade head
+      - run: make test-integration
+      - name: Tear down infra
+        if: always()
+        run: docker compose -f infra/compose/docker-compose.yml down
+
+  web:
+    name: Web — lint, types, tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: web
+      - run: pnpm format:check
+        working-directory: web
+      - run: pnpm lint
+        working-directory: web
+      - run: pnpm typecheck
+        working-directory: web
+      - run: pnpm test
+        working-directory: web
+      - run: pnpm build
+        working-directory: web
+
+  contract-drift:
+    name: Web — generated API types match the backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: web
+      - name: Regenerate types from a live API and diff against committed file
+        run: |
+          uv run uvicorn sentinelai.main:app --port 8000 &
+          API_PID=$!
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8000/openapi.json > /dev/null && break
+            sleep 1
+          done
+          cd web
+          pnpm gen:api-types
+          git diff --exit-code -- src/lib/api-types.gen.ts
+          kill "$API_PID"
