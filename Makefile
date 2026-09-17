@@ -65,3 +65,11 @@ web-build:  ## Production build of the frontend
 
 gen-api-types:  ## Regenerate web/src/lib/api-types.gen.ts (needs the API running)
 	cd web && pnpm gen:api-types
+
+docker-build-api:  ## Build the shared API/worker image
+	docker build -f infra/docker/api.Dockerfile -t sentinelai-api:local .
+
+docker-build-web:  ## Build the web image
+	docker build -f infra/docker/web.Dockerfile -t sentinelai-web:local web
+
+docker-build: docker-build-api docker-build-web  ## Build all images

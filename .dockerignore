@@ -1,0 +1,37 @@
+# Python
+
+.venv/
+**pycache**/
+_.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.import_linter_cache/
+.coverage_
+htmlcov/
+
+# Web (built with its own context - see Step 4 - but keep this in case)
+
+web/node_modules/
+web/.next/
+
+# VCS / editor / OS
+
+.git/
+.github/
+.idea/
+.vscode/
+.DS_Store
+
+# Docs / non-runtime infra
+
+docs/
+\*.md
+infra/terraform/
+infra/helm/
+
+# Secrets — never let these into a build context
+
+.env
+.env.\*
+!.env.example
