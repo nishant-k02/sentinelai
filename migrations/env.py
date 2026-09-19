@@ -15,9 +15,12 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from sentinelai.modules.ingestion import models as _ingestion_models  # noqa: F401
+
 # ``_organization_models`` is imported only for its import side effect:
 # it registers the ``organizations`` table on Base.metadata.
 from sentinelai.modules.organization import models as _organization_models  # noqa: F401
+from sentinelai.modules.service import models as _service_models  # noqa: F401
 from sentinelai.platform.config import get_settings
 from sentinelai.platform.db import Base
 
