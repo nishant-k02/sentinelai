@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import cast
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from sentinelai.platform.errors import SentinelError
@@ -13,6 +14,13 @@ logger = get_logger(__name__)
 
 def _body(code: str, message: str) -> dict[str, dict[str, str]]:
     return {"error": {"code": code, "message": message}}
+
+
+async def _handle_validation_error(request: Request, exc: Exception) -> JSONResponse:
+    err = cast(RequestValidationError, exc)
+    detail = "; ".join(f"{'.'.join(str(p) for p in e['loc'])}: {e['msg']}" for e in err.errors())
+    logger.warning("request_validation_failed", detail=detail)
+    return JSONResponse(status_code=422, content=_body("validation_error", detail))
 
 
 async def _handle_sentinel_error(request: Request, exc: Exception) -> JSONResponse:
@@ -29,7 +37,9 @@ async def _handle_unexpected_error(request: Request, exc: Exception) -> JSONResp
 
 
 def register_exception_handlers(app: FastAPI) -> None:
-    """Install one handler per error family. Route code raises domain errors;
-    the mapping to HTTP happens here, once."""
+    """One handler per error family. Route code raises domain errors, or
+    Pydantic/FastAPI raises a validation error on our behalf — either way,
+    the client sees the same {"error": {code, message}} shape."""
+    app.add_exception_handler(RequestValidationError, _handle_validation_error)
     app.add_exception_handler(SentinelError, _handle_sentinel_error)
     app.add_exception_handler(Exception, _handle_unexpected_error)

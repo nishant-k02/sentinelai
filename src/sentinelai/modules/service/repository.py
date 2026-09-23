@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from sentinelai.modules.service.models import Environment, Service
 from sentinelai.platform.repository import SQLAlchemyRepository
@@ -32,3 +32,16 @@ class ServiceRepository(SQLAlchemyRepository[Service]):
         )
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def count(
+        self, *, organization_id: uuid.UUID, environment: Environment | None = None
+    ) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(Service)
+            .where(Service.organization_id == organization_id)
+        )
+        if environment is not None:
+            stmt = stmt.where(Service.environment == environment)
+        result = await self._session.execute(stmt)
+        return int(result.scalar_one())
