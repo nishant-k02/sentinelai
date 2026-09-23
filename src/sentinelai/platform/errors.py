@@ -49,3 +49,8 @@ class ExternalServiceError(SentinelError):
 
     code = "external_service_error"
     http_status = 502
+
+
+class RateLimitExceededError(SentinelError):
+    code = "rate_limit_exceeded"
+    http_status = 429

@@ -15,9 +15,7 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-# ``_organization_models`` is imported only for its import side effect:
-# it registers the ``organizations`` table on Base.metadata.
-from sentinelai.modules.organization import models as _organization_models  # noqa: F401
+from sentinelai import model_registry  # noqa: F401  -- registers every model on Base.metadata
 from sentinelai.platform.config import get_settings
 from sentinelai.platform.db import Base
 

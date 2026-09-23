@@ -8,6 +8,7 @@ from aiokafka import AIOKafkaConsumer
 from opentelemetry import trace as otel_trace
 from structlog.stdlib import BoundLogger
 
+from sentinelai import model_registry  # noqa: F401  -- registers every model on Base.metadata
 from sentinelai.platform.config import get_settings
 from sentinelai.platform.logging import configure_logging, get_logger
 from sentinelai.platform.messaging import create_consumer, extract_trace_context

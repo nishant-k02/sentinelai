@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -10,13 +11,23 @@ from sqlalchemy.orm import DeclarativeBase
 
 from sentinelai.platform.config import Settings
 
+# Alembic's own recommended convention: without it, Postgres assigns
+# constraint names non-deterministically, and a future migration that needs
+# to `DROP CONSTRAINT <name>` has to go find out what it's actually called.
+NAMING_CONVENTION = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s",
+}
+
 
 class Base(DeclarativeBase):
-    """Parent of every ORM model.
+    """Parent of every ORM model. ``Base.metadata`` is the schema described
+    in Python; Alembic autogenerate diffs it against the live database."""
 
-    ``Base.metadata`` is the schema described in Python. Alembic autogenerate
-    diffs it against the live database to produce migration scripts.
-    """
+    metadata = MetaData(naming_convention=NAMING_CONVENTION)
 
 
 def create_db_engine(settings: Settings) -> AsyncEngine:

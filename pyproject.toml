@@ -125,3 +125,12 @@ layers = [
     "sentinelai.modules",
     "sentinelai.platform",
 ]
+
+[[tool.importlinter.contracts]]
+name = "Independent modules"
+type = "independence"
+modules = [
+    "sentinelai.modules.organization",
+    "sentinelai.modules.service",
+    "sentinelai.modules.ingestion",
+]
