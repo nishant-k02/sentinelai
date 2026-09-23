@@ -56,7 +56,8 @@ requirements and architecture as they solidify through implementation.
 | Milestone | Delivers |
 |---|---|
 | M0 (done) | Modular monolith skeleton, Postgres/Redis/Kafka, tracing, CI, Docker |
-| M1 | Service registry, metric/log ingestion API, DB schema v1 |
+| M1 (done) | Service registry, metric/log ingestion API, DB schema v1, Repository pattern |
+| M1.5 | OAuth2/JWT auth, RBAC, org-scoping, threat model — inserted here rather than folded into M1 or deferred past M2; explained in the M1 kickoff notes |
 | M2 | Statistical anomaly detection behind a `Detector` interface |
 | M3 | Incident domain: state machine, severity, correlation, timeline |
 | M4 | Real event-driven architecture: outbox, idempotent consumers, DLQ |

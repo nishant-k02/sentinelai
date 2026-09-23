@@ -55,3 +55,22 @@ async def test_missing_required_field_returns_our_error_envelope(live_client: As
     body = resp.json()
     assert body["error"]["code"] == "validation_error"
     assert "name" in body["error"]["message"]
+
+
+async def test_create_service_for_unknown_organization_returns_404_not_500(
+    live_client: AsyncClient,
+) -> None:
+    """Regression test for a real bug caught during Phase 1.6 manual
+    acceptance testing: a bogus organization_id used to reach Postgres and
+    raise an unhandled IntegrityError -> 500. register_service now checks
+    the organization exists first and raises NotFoundError -> 404."""
+    resp = await live_client.post(
+        "/v1/services",
+        json={
+            "organization_id": str(uuid.uuid4()),
+            "name": "checkout-api",
+            "environment": "production",
+        },
+    )
+    assert resp.status_code == 404
+    assert resp.json()["error"]["code"] == "not_found"

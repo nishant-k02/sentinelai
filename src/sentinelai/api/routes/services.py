@@ -4,7 +4,7 @@ import uuid
 
 from fastapi import APIRouter, Query, Response, status
 
-from sentinelai.api.deps import ServiceRepositoryDep
+from sentinelai.api.deps import OrganizationRepositoryDep, ServiceRepositoryDep
 from sentinelai.modules.service.models import Environment
 from sentinelai.modules.service.schemas import ServiceCreate, ServiceList, ServiceRead
 from sentinelai.modules.service.use_cases import register_service
@@ -15,10 +15,17 @@ router = APIRouter(prefix="/v1/services", tags=["services"])
 
 @router.post("", response_model=ServiceRead, status_code=status.HTTP_201_CREATED)
 async def create_service(
-    body: ServiceCreate, response: Response, repo: ServiceRepositoryDep
+    body: ServiceCreate,
+    response: Response,
+    org_repo: OrganizationRepositoryDep,
+    service_repo: ServiceRepositoryDep,
 ) -> ServiceRead:
     service = await register_service(
-        repo, organization_id=body.organization_id, name=body.name, environment=body.environment
+        org_repo,
+        service_repo,
+        organization_id=body.organization_id,
+        name=body.name,
+        environment=body.environment,
     )
     response.headers["Location"] = f"/v1/services/{service.id}"
     return ServiceRead.model_validate(service)

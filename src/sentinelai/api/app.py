@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
+from sentinelai import model_registry  # noqa: F401  -- registers every model on Base.metadata
 from sentinelai.api.errors import register_exception_handlers
 from sentinelai.api.routes.health import router as health_router
 from sentinelai.api.routes.ingestion import router as ingestion_router

@@ -13,6 +13,7 @@ from sentinelai.modules.ingestion.repository import (
     LogEventRepository,
     MetricSampleRepository,
 )
+from sentinelai.modules.organization.repository import OrganizationRepository
 from sentinelai.modules.service.repository import ServiceRepository
 from sentinelai.platform.errors import RateLimitExceededError
 from sentinelai.platform.rate_limit import is_allowed
@@ -41,6 +42,13 @@ async def get_service_repository(session: SessionDep) -> ServiceRepository:
 
 
 ServiceRepositoryDep = Annotated[ServiceRepository, Depends(get_service_repository)]
+
+
+async def get_organization_repository(session: SessionDep) -> OrganizationRepository:
+    return OrganizationRepository(session)
+
+
+OrganizationRepositoryDep = Annotated[OrganizationRepository, Depends(get_organization_repository)]
 
 
 async def get_metric_sample_repository(session: SessionDep) -> MetricSampleRepository:

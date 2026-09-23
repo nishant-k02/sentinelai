@@ -3,7 +3,24 @@ from __future__ import annotations
 import uuid
 
 from sentinelai.modules.ingestion.models import MetricSample
+from sentinelai.modules.organization.models import Organization
 from sentinelai.modules.service.models import Environment, Service
+
+
+class FakeOrganizationRepository:
+    """In-memory stand-in for OrganizationRepository — satisfies
+    OrganizationLookupProtocol (just `get`), nothing more."""
+
+    def __init__(self) -> None:
+        self._by_id: dict[uuid.UUID, Organization] = {}
+
+    async def get(self, id: uuid.UUID) -> Organization | None:
+        return self._by_id.get(id)
+
+    async def create(self, **fields: object) -> Organization:
+        org = Organization(id=uuid.uuid4(), **fields)
+        self._by_id[org.id] = org
+        return org
 
 
 class FakeServiceRepository:
