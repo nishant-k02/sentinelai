@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 
+from sentinelai.modules.ingestion.models import MetricSample
 from sentinelai.modules.service.models import Environment, Service
 
 
@@ -45,3 +46,16 @@ class FakeServiceRepository:
             ),
             None,
         )
+
+
+class FakeMetricSampleRepository:
+    def __init__(self) -> None:
+        self._by_id: dict[uuid.UUID, MetricSample] = {}
+
+    async def get(self, id: uuid.UUID) -> MetricSample | None:
+        return self._by_id.get(id)
+
+    async def create(self, **fields: object) -> MetricSample:
+        sample = MetricSample(id=uuid.uuid4(), **fields)
+        self._by_id[sample.id] = sample
+        return sample

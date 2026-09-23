@@ -5,28 +5,13 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
-from sentinelai.modules.organization.models import Organization
-from sentinelai.platform.config import get_settings
-from sentinelai.platform.db import create_db_engine, create_session_factory
+from tests.helpers import make_organization
 
 pytestmark = pytest.mark.integration
 
 
-async def _make_organization() -> uuid.UUID:
-    engine = create_db_engine(get_settings())
-    session_factory = create_session_factory(engine)
-    try:
-        async with session_factory() as session:
-            org = Organization(name=f"org-{uuid.uuid4()}")
-            session.add(org)
-            await session.commit()
-            return org.id
-    finally:
-        await engine.dispose()
-
-
 async def test_create_get_list_service(live_client: AsyncClient) -> None:
-    org_id = await _make_organization()
+    org_id = await make_organization()
 
     create_resp = await live_client.post(
         "/v1/services",
@@ -48,7 +33,7 @@ async def test_create_get_list_service(live_client: AsyncClient) -> None:
 
 
 async def test_duplicate_service_name_returns_409(live_client: AsyncClient) -> None:
-    org_id = await _make_organization()
+    org_id = await make_organization()
     payload = {"organization_id": str(org_id), "name": "billing-api", "environment": "staging"}
 
     assert (await live_client.post("/v1/services", json=payload)).status_code == 201

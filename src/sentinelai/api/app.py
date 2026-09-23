@@ -8,6 +8,7 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from sentinelai.api.errors import register_exception_handlers
 from sentinelai.api.routes.health import router as health_router
+from sentinelai.api.routes.ingestion import router as ingestion_router
 from sentinelai.api.routes.metrics import router as metrics_router
 from sentinelai.api.routes.services import router as services_router
 from sentinelai.platform.config import Settings, get_settings
@@ -53,5 +54,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(health_router)
     app.include_router(metrics_router)
     app.include_router(services_router)
+    app.include_router(ingestion_router)
     FastAPIInstrumentor.instrument_app(app)
     return app
