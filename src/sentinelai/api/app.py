@@ -10,7 +10,7 @@ from sentinelai.api.errors import register_exception_handlers
 from sentinelai.api.routes.health import router as health_router
 from sentinelai.api.routes.metrics import router as metrics_router
 from sentinelai.platform.config import Settings, get_settings
-from sentinelai.platform.db import create_db_engine
+from sentinelai.platform.db import create_db_engine, create_session_factory
 from sentinelai.platform.logging import configure_logging, get_logger
 from sentinelai.platform.redis import create_redis
 from sentinelai.platform.tracing import configure_tracing, instrument_redis, instrument_sqlalchemy
@@ -27,6 +27,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     instrument_sqlalchemy(engine)
     instrument_redis()
     app.state.engine = engine
+    app.state.session_factory = create_session_factory(engine)
     app.state.redis = redis
     log.info("api_started")
 
