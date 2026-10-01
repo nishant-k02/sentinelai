@@ -25,6 +25,8 @@ dependencies = [
     "opentelemetry-instrumentation-fastapi>=0.50b0",
     "opentelemetry-instrumentation-sqlalchemy>=0.50b0",
     "opentelemetry-instrumentation-redis>=0.50b0",
+    "pyjwt>=2.9",
+    "argon2-cffi>=23.1",
 ]
 
 [dependency-groups]
@@ -133,4 +135,5 @@ modules = [
     "sentinelai.modules.organization",
     "sentinelai.modules.service",
     "sentinelai.modules.ingestion",
+    "sentinelai.modules.auth",
 ]

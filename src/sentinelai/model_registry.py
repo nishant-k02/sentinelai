@@ -20,6 +20,7 @@ is the one place allowed to import all three.
 
 from __future__ import annotations
 
+from sentinelai.modules.auth import models as _auth_models  # noqa: F401
 from sentinelai.modules.ingestion import models as _ingestion_models  # noqa: F401
 from sentinelai.modules.organization import models as _organization_models  # noqa: F401
 from sentinelai.modules.service import models as _service_models  # noqa: F401
