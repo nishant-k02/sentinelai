@@ -8,8 +8,14 @@ from functools import lru_cache
 from typing import Protocol
 
 from sentinelai.modules.auth.models import RefreshToken, Role, User
+from sentinelai.modules.auth.policy import PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH
 from sentinelai.platform.config import Settings
-from sentinelai.platform.errors import AuthenticationError, ConflictError, NotFoundError
+from sentinelai.platform.errors import (
+    AuthenticationError,
+    ConflictError,
+    NotFoundError,
+    ValidationError,
+)
 from sentinelai.platform.security import (
     create_access_token,
     generate_refresh_token,
@@ -118,6 +124,14 @@ async def register_user(
     'check your email' and sending a message, needs email infrastructure
     we don't have. Recorded in SECURITY.md (Auth-6).
     """
+    # Enforced here as well as in the request schema: the bootstrap CLI
+    # never goes through HTTP, and a rule that only one entry point
+    # enforces isn't a rule.
+    if not PASSWORD_MIN_LENGTH <= len(password) <= PASSWORD_MAX_LENGTH:
+        raise ValidationError(
+            f"password must be between {PASSWORD_MIN_LENGTH} and {PASSWORD_MAX_LENGTH} characters"
+        )
+
     if await org_repo.get(organization_id) is None:
         raise NotFoundError(f"organization {organization_id} not found")
 

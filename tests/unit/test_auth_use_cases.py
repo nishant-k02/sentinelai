@@ -12,7 +12,12 @@ from sentinelai.modules.auth.use_cases import (
     revoke_refresh_token,
 )
 from sentinelai.platform.config import Settings
-from sentinelai.platform.errors import AuthenticationError, ConflictError, NotFoundError
+from sentinelai.platform.errors import (
+    AuthenticationError,
+    ConflictError,
+    NotFoundError,
+    ValidationError,
+)
 from sentinelai.platform.security import decode_access_token, hash_refresh_token, verify_password
 from tests.fakes import FakeOrganizationRepository, FakeRefreshTokenRepository, FakeUserRepository
 
@@ -88,6 +93,24 @@ async def test_register_rejects_duplicate_email_case_insensitively() -> None:
             organization_id=org.id,
             email="alice@example.com",
             password=PASSWORD,
+            role=Role.VIEWER,
+        )
+
+
+@pytest.mark.parametrize("password", ["short", "x" * 11, "x" * 129])
+async def test_register_enforces_the_password_policy(password: str) -> None:
+    """The use case enforces it too, not just the request schema: the
+    bootstrap CLI never goes through HTTP."""
+    org_repo, user_repo = FakeOrganizationRepository(), FakeUserRepository()
+    org = await org_repo.create(name="acme")
+
+    with pytest.raises(ValidationError):
+        await register_user(
+            org_repo,
+            user_repo,
+            organization_id=org.id,
+            email=EMAIL,
+            password=password,
             role=Role.VIEWER,
         )
 

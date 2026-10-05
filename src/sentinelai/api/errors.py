@@ -26,7 +26,11 @@ async def _handle_validation_error(request: Request, exc: Exception) -> JSONResp
 async def _handle_sentinel_error(request: Request, exc: Exception) -> JSONResponse:
     err = cast(SentinelError, exc)
     logger.warning("request_failed", code=err.code, status=err.http_status, detail=err.message)
-    return JSONResponse(status_code=err.http_status, content=_body(err.code, err.message))
+    # RFC 6750: a 401 from a bearer-protected API must say which scheme it expects.
+    headers = {"WWW-Authenticate": "Bearer"} if err.http_status == 401 else None
+    return JSONResponse(
+        status_code=err.http_status, content=_body(err.code, err.message), headers=headers
+    )
 
 
 async def _handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:

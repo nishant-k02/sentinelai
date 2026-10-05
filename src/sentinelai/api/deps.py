@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import uuid
 from collections.abc import AsyncIterator
 from typing import Annotated
@@ -8,6 +9,7 @@ from fastapi import Depends, Request
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from sentinelai.modules.auth.repository import RefreshTokenRepository, UserRepository
 from sentinelai.modules.ingestion.repository import (
     DeploymentRepository,
     LogEventRepository,
@@ -15,6 +17,7 @@ from sentinelai.modules.ingestion.repository import (
 )
 from sentinelai.modules.organization.repository import OrganizationRepository
 from sentinelai.modules.service.repository import ServiceRepository
+from sentinelai.platform.config import Settings
 from sentinelai.platform.errors import RateLimitExceededError
 from sentinelai.platform.rate_limit import is_allowed
 
@@ -37,6 +40,14 @@ async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
+def get_app_settings(request: Request) -> Settings:
+    settings: Settings = request.app.state.settings
+    return settings
+
+
+SettingsDep = Annotated[Settings, Depends(get_app_settings)]
+
+
 async def get_service_repository(session: SessionDep) -> ServiceRepository:
     return ServiceRepository(session)
 
@@ -49,6 +60,20 @@ async def get_organization_repository(session: SessionDep) -> OrganizationReposi
 
 
 OrganizationRepositoryDep = Annotated[OrganizationRepository, Depends(get_organization_repository)]
+
+
+async def get_user_repository(session: SessionDep) -> UserRepository:
+    return UserRepository(session)
+
+
+UserRepositoryDep = Annotated[UserRepository, Depends(get_user_repository)]
+
+
+async def get_refresh_token_repository(session: SessionDep) -> RefreshTokenRepository:
+    return RefreshTokenRepository(session)
+
+
+RefreshTokenRepositoryDep = Annotated[RefreshTokenRepository, Depends(get_refresh_token_repository)]
 
 
 async def get_metric_sample_repository(session: SessionDep) -> MetricSampleRepository:
@@ -92,3 +117,43 @@ async def enforce_ingestion_rate_limit(service_id: uuid.UUID, redis: RedisDep) -
 
 
 RateLimitDep = Annotated[None, Depends(enforce_ingestion_rate_limit)]
+
+
+LOGIN_WINDOW_SECONDS = 15 * 60
+LOGIN_MAX_PER_IP_AND_EMAIL = 10
+LOGIN_MAX_PER_IP = 100
+
+
+async def enforce_login_rate_limit(redis: Redis, ip: str, email: str) -> None:
+    """Brute-force defense for the login endpoint.
+
+    Two counters, both bumped on every attempt:
+    - per (ip, email): stops credential-guessing against one account from
+      one place. Keyed on the PAIR, not the email alone: an email-only limit
+      lets an attacker lock a victim out by spamming bad logins.
+    - per ip: stops one machine spraying many accounts.
+    A botnet with many IPs beats both; that is what a WAF / bot protection
+    is for, and it's out of scope here (see SECURITY.md).
+
+    The email is hashed before it becomes part of a Redis key, so addresses
+    don't sit in plaintext in the keyspace, in MONITOR output, or in dumps.
+
+    Deliberately a plain function called from the route, not a Depends():
+    it needs the parsed request body, and declaring the same body model in
+    both a dependency and the route makes FastAPI expect an embedded body.
+    """
+    digest = hashlib.sha256(email.strip().lower().encode()).hexdigest()[:16]
+    pair_ok = await is_allowed(
+        redis,
+        f"ratelimit:login:pair:{ip}:{digest}",
+        limit=LOGIN_MAX_PER_IP_AND_EMAIL,
+        window_seconds=LOGIN_WINDOW_SECONDS,
+    )
+    ip_ok = await is_allowed(
+        redis,
+        f"ratelimit:login:ip:{ip}",
+        limit=LOGIN_MAX_PER_IP,
+        window_seconds=LOGIN_WINDOW_SECONDS,
+    )
+    if not (pair_ok and ip_ok):
+        raise RateLimitExceededError("too many login attempts, try again later")

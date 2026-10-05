@@ -1,5 +1,5 @@
 .PHONY: install fmt lint typecheck test test-integration test-all check up down logs migrate migration \
-	worker web-install web-dev web-lint web-typecheck web-test web-build gen-api-types
+	worker create-admin seed reseed web-install web-dev web-lint web-typecheck web-test web-build gen-api-types
 
 install:  ## Sync dependencies into .venv
 	uv sync
@@ -73,3 +73,12 @@ docker-build-web:  ## Build the web image
 	docker build -f infra/docker/web.Dockerfile -t sentinelai-web:local web
 
 docker-build: docker-build-api docker-build-web  ## Build all images
+
+create-admin:  ## Bootstrap an admin:  make create-admin ORG="Acme" EMAIL=you@example.com
+	uv run python -m sentinelai.cli create-admin --org-name "$(ORG)" --email "$(EMAIL)"
+
+seed:  ## Load the demo fleet (local only; no-op if already seeded)
+	uv run python -m sentinelai.cli seed-demo
+
+reseed:  ## Regenerate the demo fleet so its "last 3 hours" is fresh again
+	uv run python -m sentinelai.cli seed-demo --reset
