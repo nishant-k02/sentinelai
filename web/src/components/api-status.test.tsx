@@ -7,18 +7,18 @@ vi.mock("@/lib/api-client", () => ({
 
 import { getHealth } from "@/lib/api-client";
 
-import HomePage from "./page";
+import { ApiStatus } from "./api-status";
 
-describe("HomePage", () => {
+describe("ApiStatus", () => {
   it("shows healthy when the API responds ok", async () => {
     vi.mocked(getHealth).mockResolvedValue({ status: "ok" });
-    render(await HomePage());
+    render(await ApiStatus());
     expect(screen.getByTestId("api-status")).toHaveTextContent("API: healthy");
   });
 
   it("shows unreachable when the API call fails", async () => {
     vi.mocked(getHealth).mockRejectedValue(new Error("connection refused"));
-    render(await HomePage());
+    render(await ApiStatus());
     expect(screen.getByTestId("api-status")).toHaveTextContent(
       "API: unreachable",
     );
